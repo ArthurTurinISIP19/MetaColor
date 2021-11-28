@@ -8,18 +8,27 @@ public class Paint : NetworkBehaviour
     [SerializeField] private TextureWrapMode _textureWrapMode;
     [SerializeField] private FilterMode _filterMode;
 
-    [SerializeField] private int _brushSize = 8;
+    [SerializeField] private int _brushSize = 32;
 
-
+    public TestingMemoryFootprints tests;
     [SerializeField] private ObjInfo info;
-   // public Colors color;
+    // public Colors color;
 
     private int _oldRayX, _oldRayY;
+
+    private Color _color = Color.black;
+
+    Color[] posColors = { Color.black, Color.red, Color.blue, Color.green };
+
+    public void SetColor(int color)
+    {
+        _color = posColors[color];
+    }
 
     override public void OnStartClient()
     {
         RequestTextureMessage msg = new RequestTextureMessage();
-        NetworkClient.Send(msg);
+        //NetworkClient.Send(msg);
     }
 
     [Client]
@@ -43,50 +52,66 @@ public class Paint : NetworkBehaviour
             RaycastHit hit;
             if (Physics.Raycast(ray, out hit, 1000f))
             {
-                if (hit.transform.TryGetComponent<NetworkIdentity>(out _))
+                if (hit.transform.TryGetComponent<NetworkIdentity>(out NetworkIdentity identity))
                 {
-                    CmdDraw(hit.transform.gameObject, hit.textureCoord, _brushSize, Colors._color);
+
+                    CmdDraw(identity, hit.textureCoord, _brushSize, _color);
                 }
             }
         }
     }
 
     [Command]
-    void CmdDraw(GameObject obj, Vector2 textureCoord, int brushSize, Color color)
+    void CmdDraw(NetworkIdentity obj, Vector2 textureCoord, int brushSize, Color color)
     {
         if (obj.tag == "Paintable")
         {
-            
             DrawOnTexture(obj, textureCoord, brushSize, color);
-            info.oobj = obj;
-            info.material = obj.GetComponent<Renderer>().sharedMaterial;
+            //info.oobj = obj;
+            //info.material = obj.GetComponent<Renderer>().sharedMaterial;
 
             RpcDrawOnTexture(obj, textureCoord, brushSize, color);
         }
     }
 
     [ClientRpc]
-    void RpcDrawOnTexture(GameObject obj, Vector2 textureCoord, int brushSize, Color color)
+    void RpcDrawOnTexture(NetworkIdentity obj, Vector2 textureCoord, int brushSize, Color color)
     {
-        DrawOnTexture(obj, textureCoord, brushSize,  color);
+        DrawOnTexture(obj, textureCoord, brushSize, color);
     }
 
-    void DrawOnTexture(GameObject obj, Vector2 textureCoord, int brushSize, Color color)
+    void DrawOnTexture(NetworkIdentity obj, Vector2 textureCoord, int brushSize, Color color)
     {
-        Texture2D texture = (Texture2D)obj.GetComponent<Renderer>().sharedMaterial.mainTexture;
+        //MaterialPropertyBlock block = tests.matBlocks[obj];
+        //obj.GetComponent<Renderer>().GetPropertyBlock(block);
+        //Debug.Log(obj.GetComponent<Renderer>());
+        //Texture2D texture = (Texture2D)block.GetTexture("_MainTex");
+
+        Texture2D texture = new Texture2D(256, 256);
+
+        if (obj.GetComponent<Renderer>().sharedMaterial.mainTexture == null)
+        {
+            texture.Apply();
+            // MaterialPropertyBlock block = new MaterialPropertyBlock();
+            // block.SetTexture("_MainTex", texture);
+            // obj.GetComponent<Renderer>().SetPropertyBlock(block);
+            obj.GetComponent<Renderer>().material.mainTexture = texture;
+        }
+        else
+        {
+            texture = (Texture2D)obj.GetComponent<Renderer>().material.mainTexture;
+        }
 
         int rayX = (int)(textureCoord.x * texture.width);
         int rayY = (int)(textureCoord.y * texture.height);
 
         if (_oldRayX != rayX || _oldRayY != rayY)
         {
-            //     //DrawQuad(rayX, rayY);
-            DrawCircle(rayX, rayY, texture, brushSize,  color);
+            DrawCircle(rayX, rayY, texture, brushSize, color);
             texture.Apply();
             _oldRayX = rayX;
             _oldRayY = rayY;
         }
-        // cachedTexture = texture.GetPixels();
     }
 
 
@@ -120,7 +145,6 @@ public class Paint : NetworkBehaviour
                     if (pixelX >= 0 && pixelX < texture.width && pixelY >= 0 && pixelY < texture.height)
                     {
                         Color oldColor = texture.GetPixel(pixelX, pixelY);
-                        //Color resultColor = Color.Lerp(oldColor, Colors._color, 0.5f);
                         Color resultColor = Color.Lerp(oldColor, color, 0.5f);
                         texture.SetPixel(pixelX, pixelY, resultColor);
                     }
@@ -128,10 +152,4 @@ public class Paint : NetworkBehaviour
             }
         }
     }
-
-    // private void OnDestroy()
-    // {
-    //     Destroy(cachedMaterial);
-    // }
-
 }

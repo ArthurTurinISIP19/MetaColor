@@ -1,25 +1,34 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
 
+public struct CreateCharacterMessage : NetworkMessage { }
+
 public class CustomNetwork : NetworkManager
 {
-    
-    public override void OnClientConnect(NetworkConnection conn)
+
+    public override void OnStartServer()
     {
-        if (!clientLoadedScene)
-        {
-            // Ready/AddPlayer is usually triggered by a scene load
-            // completing. if no scene was loaded, then Ready/AddPlayer it
-            // here instead.
-            if (!NetworkClient.ready) NetworkClient.Ready();
-            if (autoCreatePlayer)
-            {
-                NetworkClient.AddPlayer();
-            }
-        }
+        NetworkServer.RegisterHandler<CreateCharacterMessage>(OnCreateCharacter);
     }
 
+    public override void OnClientConnect(NetworkConnection conn)
+    {
+        base.OnClientConnect(conn);
+        CreateCharacterMessage characterMessage = new CreateCharacterMessage();
+        conn.Send(characterMessage);
+    }
 
+    // Дальше в PreparePlayer.cs
+    void OnCreateCharacter(NetworkConnection conn, CreateCharacterMessage message)
+    {
+        GameObject playerobject = Instantiate(playerPrefab);
+        NetworkServer.AddPlayerForConnection(conn, playerobject);
+
+        CharacterCreatedMessage charCreatedMsg = new CharacterCreatedMessage()
+        {
+            identity = playerobject.GetComponent<NetworkIdentity>()
+        };
+
+        conn.Send(charCreatedMsg);
+    }
 }

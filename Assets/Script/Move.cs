@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using Cinemachine;
 using Mirror;
 
 public class Move : NetworkBehaviour
@@ -16,28 +15,14 @@ public class Move : NetworkBehaviour
     public float maxTurnAngle = 90.0f;
     private float rotX;
 
-    private Joystick joystickMove;
-    private Joystick joystickAim;
+    [SerializeField] private Joystick joystickMove;
+    [SerializeField] private Joystick joystickAim;
 
     public float verticalMove;
     public float horizontalMove;
 
     public float verticalAim;
     public float horizontalAim;
-
-    [Client]
-    private void Start()
-    {
-        if (isLocalPlayer)
-        {
-            joystickMove = GameObject.FindGameObjectWithTag("LeftJS").GetComponent<Joystick>();
-            joystickAim = GameObject.FindGameObjectWithTag("RightJS").GetComponent<Joystick>();
-            var cam = GameObject.FindGameObjectWithTag("CinemachineTarget").GetComponent<CinemachineVirtualCamera>();
-            cam.Follow = cameraRoot.transform;
-        }
-    }
-
-
 
     [Client]
     void Update()

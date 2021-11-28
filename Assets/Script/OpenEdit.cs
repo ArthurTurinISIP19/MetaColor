@@ -4,17 +4,15 @@ using UnityEngine;
 
 public class OpenEdit : MonoBehaviour
 {
-    [SerializeField] private GameObject _HUD;
-
     public void OpenEditor()
     {
-        if (_HUD.activeSelf)
+        if (gameObject.activeSelf)
         {
-            _HUD.SetActive(false);
+            gameObject.SetActive(false);
         }
         else
         {
-            _HUD.SetActive(true);
+            gameObject.SetActive(true);
         }
     }
 }

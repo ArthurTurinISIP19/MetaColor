@@ -1,31 +1,24 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 public class Colors : MonoBehaviour
 {
+
     [SerializeField] public static Color _color = Color.black;
     private GameObject _target;
     private float _rotateSpeed = 10000;
     private bool _isRotateLeft = false;
-    public void SetRedColor()
-    {
-        _color = Color.red;
-    }
 
-    public void SetBlueColor()
-    {
-        _color = Color.blue;
-    }
+    Color[] posColors = { Color.black, Color.red, Color.blue, Color.green };
 
-    public void SetGreenColor()
+    public void SetColor(int color)
     {
-        _color = Color.green;
+        _color = posColors[color];
     }
 
     private void OnTriggerStay(Collider other)
     {
-        if(other.gameObject.tag == "Paintable")
+        if (other.gameObject.tag == "Paintable")
             _target = GameObject.Find(other.gameObject.name);
     }
 
